@@ -125,3 +125,24 @@ npm test
 ```
 
 which runs `node --test test/*.test.mjs`.
+
+The rest of the extension — manifest parsing, content-script injection, the
+overlay, screenshots, `data:` downloads and the export layout — is covered by a
+browser harness that loads BugPin unpacked in a real Chromium and drives one
+full session (start → activity → annotate → save → export), asserting 21 things
+about the result:
+
+```
+npm run test:browser
+```
+
+It needs Playwright with the full `chromium` channel; the default headless
+shell cannot load extensions. If this repo has no Playwright of its own, point
+it at one:
+
+```
+BUGPIN_PLAYWRIGHT=/path/to/node_modules/playwright/index.mjs npm run test:browser
+```
+
+Toolbar icons are generated, not committed by hand — `npm run icons` rasterizes
+`icons/icon{16,32,48,128}.png` with no dependencies.

@@ -260,65 +260,75 @@ severity claim itself is rejected.
 
 ---
 
-## 4. NOT verified — needs a real Chrome
+## 3b. Verified in a real Chromium (2026-08-10)
 
-Everything below is unreachable from `node --test` and from the SW simulation.
-No claim is made that these work; they are the manual checks a human must run.
+`test/browser-loadtest.mjs` loads the unpacked extension into a real Chromium
+(Playwright, `channel: 'chromium'`, full browser — the default headless shell
+cannot load extensions), serves a local test page, and drives a whole session:
+start → click/type/failed-fetch/console-error → annotate → save a note → export.
+**21/21 checks pass.** It proves items 1, 2, 5, 6, 9, 12 from the list below,
+which are struck from it accordingly.
 
-1. **Extension loads at all.** `chrome://extensions` → Developer mode → Load
-   unpacked → repo root. Confirm no manifest error and no service-worker
-   startup error. *(The `unlimitedStorage` permission addition is new and
-   unverified against a real manifest parse.)*
-2. **Element crop.** `cropElementShot` uses `fetch(data:)` + `createImageBitmap`
-   + `OffscreenCanvas`, none of which exist in Node — the simulation exercises
-   only the *degradation* path. Annotate an element and confirm
-   `shots/01-element.jpg` exists, is the right region, and is padded by
-   `LIMITS.ELEMENT_SHOT_PAD` at the page's `devicePixelRatio`.
-3. **`conflictAction: 'overwrite'` (C5).** Export a session, add a second
-   annotation, export again. Confirm exactly one folder, no `report (1).md`, no
-   `shots/01-full (1).jpg`, and that `report.md` is the *second* export's
-   content with working image links.
-4. **Wrong-tab screenshot guard (C6).** Start a session, annotate, then while a
-   second annotation's capture is queued switch to another tab in the same
-   window. Confirm no screenshot of the unrelated tab appears in the export
-   (the annotation should have null shots instead).
-5. **`data:` URL downloads.** MV3 workers have no `URL.createObjectURL`, so all
-   10 files go out as `data:` URLs. Confirm Chrome accepts every one, including
-   the large base64 JPEGs.
-6. **`e2e.spec.ts` MIME.** `downloads.js` serves text as `data:text/plain`.
-   Confirm Chrome does not append `.txt` to the `.ts` filename on your platform.
-   Unfixed — a per-extension MIME table risked more than it bought without a
-   browser to test against.
-7. **Early `SET_MODE` buffering (C8).** Press `Cmd/Ctrl+Shift+E` the instant a
-   heavy page finishes loading. Confirm the overlay actually activates (badge
-   red *and* crosshair cursor + hover highlight present) rather than the badge
-   alone.
-8. **Tab-close stop (C7).** Start a session, close the tab without opening the
-   popup. Confirm the badge clears, and that reopening the popup shows a stopped
-   session whose data still exports.
-9. **Annotation redaction end to end (C1).** Load
-   `https://example.com/x?token=abcdef1234567890`, annotate an `<a href>` whose
-   text contains a secret-shaped string, export, and grep the whole folder for
-   the raw token — expect zero hits in `report.md`, `annotations.txt` and
-   `session.json`.
-10. **Blob-rule false positives (C2).** `console.error` a git SHA, a 32-char hex
-    id and a stack trace with an absolute path; confirm all three survive intact
-    in `console.txt`, while a mixed-case 40-char API key is redacted.
-11. **Storage quota (C4).** Take 25 annotations on a large viewport and confirm
-    no `QUOTA_BYTES` error in the service-worker console, then Discard and
-    confirm every `bugpin.shot.N` key is gone.
-12. **Screenshot excludes the note box.** Confirm the overlay input is genuinely
-    absent from `shots/NN-full.jpg` (the `nextPaint()` double-RAF timing is not
-    testable headlessly).
-13. **`icons/icon.svg` is still orphaned.** The manifest has no `icons` key.
-    Chrome MV3 rejects SVG manifest icons, so this needs a real PNG set before
-    release. Not fixed.
-14. **Content scripts remain un-unit-tested.** PROTOCOL §7 only mandates tests
-    for the four pure modules. The DOM-side fixes (C1 annotate redaction, C8
-    listener ordering, C14 messaging) are verified by reading plus the SW
-    simulation, not by an automated DOM test.
+Confirmed by that run: the manifest parses, the service worker starts with no
+console errors, content scripts inject, `[data-testid]` selector generation
+wins, the element crop is correct, no BugPin UI appears in either screenshot,
+the folder is named from the note, all 8 text files plus both JPEGs are written,
+and neither the password nor a URL token survives into any exported file.
 
----
+Two defects it caught, both since fixed:
+
+- **Chrome renamed three exports.** `data:text/plain` disagreed with the
+  filename extension, so `report.md` → `report.txt`, `e2e.spec.ts` →
+  `e2e.spec.txt`, `session.json` → `session.txt`. `lib/downloads.js` now serves
+  each extension its matching MIME type (`text/markdown`, `application/json`),
+  falling back to `application/octet-stream`, which Chrome leaves alone. This is
+  exactly the risk item 6 flagged as unfixable-without-a-browser.
+- **The status chip appeared in every evidence screenshot**, reading a stale
+  note count. `content-annotate.js` now hides the whole overlay — chip included
+  — before the capture and restores it after.
+
+Two export defects were also visible in the produced files and fixed:
+annotation headings were `##` inside a `##` section (now `###`), and the
+generated spec did `fill('«redacted»')`, which would type the placeholder into
+the field (now a `process.env.BUGPIN_SECRET` line with a TODO).
+
+## 4. Still NOT verified — needs a human in a real Chrome
+
+The Chromium harness (§3b) covers the load, the crop, the export layout, the
+`data:` downloads and redaction end to end. What remains needs either the real
+Chrome UI (the popup, the keyboard command) or a scenario the harness does not
+stage.
+
+1. **The popup and options pages.** The harness drives the extension by message,
+   never by clicking `popup.html`. Open the popup: confirm the status headline,
+   the note count ticking up, the export path line, and that Options saves.
+2. **The `Cmd/Ctrl+Shift+E` command.** `chrome.commands` cannot be triggered by
+   synthesized input, so annotate mode has only ever been toggled by message.
+3. **`conflictAction: 'overwrite'` (C5).** Export, add a second annotation,
+   export again. Confirm one folder, no `report (1).md`, and that `report.md`
+   holds the second export with working image links.
+4. **Wrong-tab screenshot guard (C6).** Annotate, then switch tabs while a
+   capture is queued. The annotation should save with null shots rather than a
+   screenshot of the unrelated tab.
+5. **Early `SET_MODE` buffering (C8).** Hit the shortcut the instant a heavy page
+   finishes loading; the overlay must actually activate, not just the badge.
+6. **Tab-close stop (C7).** Start a session, close the tab without opening the
+   popup. The badge should clear and the session should still export.
+7. **Blob-rule false positives (C2).** `console.error` a git SHA, a 32-char hex
+   id and a stack trace with an absolute path; all three must survive intact,
+   while a mixed-case 40-char API key is redacted.
+8. **Storage quota (C4).** 25 annotations on a large viewport with no
+   `QUOTA_BYTES` error, then Discard and confirm every `bugpin.shot.N` key is
+   gone.
+9. **Pin restore across a reload (`RESTORE_PINS`).** The harness annotates once
+   and exports; it never reloads the page to check the pins come back.
+10. **Multiple annotations and pin layout.** Only the single-annotation path has
+    been exercised. Place several, scroll, resize, and confirm the pins track
+    their elements.
+
+Content scripts still have no unit tests — PROTOCOL §7 mandates them only for
+the four pure modules. Their behaviour is now covered by the browser harness
+rather than by reading alone.
 
 ## 5. Files changed
 
@@ -339,3 +349,15 @@ No claim is made that these work; they are the manual checks a human must run.
 | `test/redact.test.mjs` | 2 tests rewritten, 4 added |
 | `test/capture-store.test.mjs` | 6 tests added |
 | `test/export.test.mjs` | 7 tests added |
+
+### Changed afterwards, from the Chromium run (§3b)
+
+| File | Change |
+| --- | --- |
+| `lib/downloads.js` | Per-extension MIME so Chrome stops renaming `.md`/`.ts`/`.json` |
+| `lib/export.js` | Annotation headings `##` → `###`; redacted values become a `process.env` placeholder in `e2e.spec.ts` |
+| `content-annotate.js` | Hide the status chip too before a capture, restore after |
+| `manifest.json` | Real PNG icon set wired up (`icons` + `action.default_icon`) |
+| `tools/make-icons.mjs` | New — dependency-free PNG rasterizer for the icon |
+| `test/browser-loadtest.mjs` | New — the 21-check Chromium harness |
+| `test/export.test.mjs` | 1 test rewritten (heading level), 1 added (redacted fill) |

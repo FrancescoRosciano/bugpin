@@ -311,11 +311,25 @@ test('renderReport: escapes backticks and pipes from captured strings', () => {
   assert.match(out, /## 1\. Button \\`misaligned\\` \\\|broken|## 1\. Button \\`misaligned\\` \\\| broken/);
 });
 
-test('renderReport: each annotation section is headed "## N. <note>" and links shots', () => {
+test('renderReport: each annotation section is headed "### N. <note>" and links shots', () => {
   const out = renderReport(fullSessionFixture());
-  assert.match(out, /^## 1\. /m);
+  // h3, so each note nests under the "## Annotations" section rather than
+  // becoming a sibling of it in a table of contents.
+  assert.match(out, /^### 1\. /m);
+  assert.doesNotMatch(out, /^## 1\. /m);
   assert.match(out, /shots\/01-element\.jpg/);
   assert.match(out, /shots\/01-full\.jpg/);
+});
+
+test('renderPlaywrightSpec: a redacted value becomes an env placeholder, not a literal', () => {
+  const session = fullSessionFixture();
+  const step = session.events.find((e) => e.kind === 'step' && e.action === 'input');
+  step.value = '«redacted»';
+  const out = renderPlaywrightSpec(session);
+  // Filling the literal placeholder would type "«redacted»" into the field.
+  assert.doesNotMatch(out, /fill\('«redacted»'\)/);
+  assert.match(out, /process\.env\.BUGPIN_SECRET \?\? ''/);
+  assert.match(out, /TODO: the real value was redacted/);
 });
 
 test('renderReport: annotation block includes nearby timeline context', () => {

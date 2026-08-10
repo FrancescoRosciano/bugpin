@@ -5,6 +5,8 @@
   "type": "module",
   "description": "Chrome MV3 extension: point at an element, say what's wrong, export the whole debugging session as one folder.",
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "test:browser": "node test/browser-loadtest.mjs",
+    "icons": "node tools/make-icons.mjs"
   }
 }

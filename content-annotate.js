@@ -407,12 +407,17 @@
    * layer, so the screenshot the service worker takes on MSG.ANNOTATION shows
    * the page, not our input (PROTOCOL §5).
    */
-  function hideNoteBoxForCapture() {
-    const { noteBox, hoverBox, tooltip } = state.elements;
+  /**
+   * Hides every piece of BugPin's own UI — including the status chip — so the
+   * screenshot the service worker is about to take shows the page, not the tool.
+   */
+  function hideOverlayForCapture() {
+    const { noteBox, hoverBox, tooltip, chip } = state.elements;
     noteBox.hidden = true;
     hoverBox.classList.remove('solid');
     hoverBox.hidden = true;
     tooltip.hidden = true;
+    chip.hidden = true;
   }
 
   /** Brings the note box back with its text after a failed save. */
@@ -504,7 +509,7 @@
     // Build the payload (rect included) while the element is still frozen,
     // then hide the input BEFORE the service worker screenshots the tab.
     const annotation = buildAnnotationPayload(target, note);
-    hideNoteBoxForCapture();
+    hideOverlayForCapture();
     try {
       await nextPaint();
       const response = await sendMessage({ type: MSG.ANNOTATION, annotation });
@@ -517,6 +522,7 @@
       reopenNoteBox(target, note, saveErrorMessage(err));
     } finally {
       saveBtn.disabled = false;
+      if (state.annotating) state.elements.chip.hidden = false;
     }
   }
 
