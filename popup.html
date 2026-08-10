@@ -26,32 +26,35 @@
   body {
     width: 320px;
     margin: 0;
-    padding: 12px;
+    padding: 16px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--fg);
     background: var(--bg);
   }
   h1 {
-    font-size: 14px;
-    margin: 0 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 4px;
   }
   #status {
-    margin: 0 0 10px;
-    padding: 8px;
-    border-radius: 6px;
-    background: rgba(128, 128, 128, 0.1);
-    color: var(--muted);
-    min-height: 1.2em;
+    margin: 0 0 20px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--fg);
+    min-height: 1.25em;
   }
   .row {
     display: flex;
     gap: 8px;
     margin-bottom: 8px;
   }
+  .row:last-of-type { margin-bottom: 0; }
+  .row + .row.section { margin-top: 20px; }
   button {
     flex: 1;
     font: inherit;
@@ -75,21 +78,25 @@
     color: var(--accent-fg);
   }
   #exportInfo {
-    margin: 6px 0 0;
+    margin: 20px 0 0;
     padding: 8px;
     border-radius: 6px;
     background: rgba(34, 139, 34, 0.12);
-    font-size: 12px;
+    font-size: 11px;
+    line-height: 1.45;
     word-break: break-all;
   }
   #error {
-    margin: 6px 0 0;
+    margin: 20px 0 0;
     color: var(--danger);
-    font-size: 12px;
+    font-size: 11px;
+    line-height: 1.45;
   }
   #error:empty { display: none; }
   footer {
-    margin-top: 10px;
+    margin-top: 20px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
     text-align: right;
   }
   .link-button {
@@ -97,6 +104,7 @@
     border: none;
     background: none;
     color: var(--muted);
+    font-size: 11px;
     text-decoration: underline;
     padding: 4px;
   }
@@ -112,7 +120,7 @@
   <div class="row">
     <button id="annotateBtn" type="button" aria-pressed="false">Annotate (⌘⇧E)</button>
   </div>
-  <div class="row">
+  <div class="row section">
     <button id="exportBtn" type="button" disabled>Export session</button>
     <button id="discardBtn" type="button" disabled>Discard</button>
   </div>

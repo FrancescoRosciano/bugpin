@@ -33,16 +33,27 @@
     color: var(--fg);
     background: var(--bg);
   }
-  h1 { font-size: 18px; }
+  h1 {
+    font-size: 22px;
+    line-height: 1.2;
+    margin: 0 0 24px;
+  }
   fieldset {
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 14px 16px;
-    margin: 0 0 16px;
+    padding: 16px 18px;
+    margin: 0 0 28px;
   }
-  legend { padding: 0 6px; font-weight: 600; }
+  legend {
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
   .field {
-    margin-bottom: 14px;
+    margin-bottom: 20px;
   }
   .field:last-child { margin-bottom: 0; }
   label.checkbox {
@@ -54,8 +65,8 @@
   .hint {
     margin: 4px 0 0 26px;
     color: var(--muted);
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 11px;
+    line-height: 1.5;
   }
   .number-field label {
     display: block;
@@ -74,7 +85,7 @@
   .actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
   button {
     font: inherit;
@@ -90,9 +101,9 @@
     border-color: var(--accent);
     color: var(--accent-fg);
   }
-  #saved { color: var(--ok); font-size: 13px; }
+  #saved { color: var(--ok); }
   #saved[hidden] { display: none; }
-  #error { color: var(--danger); font-size: 13px; }
+  #error { margin: 20px 0 0; color: var(--danger); }
   #error:empty { display: none; }
 </style>
 </head>
@@ -133,7 +144,7 @@
         <input type="checkbox" id="redact" />
         Redact secrets &amp; PII
       </label>
-      <p class="hint">Masks password field values, Authorization/Cookie/Set-Cookie headers, and strings that look like API keys, bearer tokens or JWTs before anything is stored. This is best-effort pattern matching, not a guarantee — unusual secret formats can still slip through, so review an export before sharing it.</p>
+      <p class="hint">Masks password field values, the values of secret-shaped query parameters (token, key, secret, auth…), and strings that look like API keys, bearer tokens or JWTs before anything is stored. Request headers are never captured at all. This is best-effort pattern matching, not a guarantee — unusual secret formats can still slip through, so review an export before sharing it.</p>
     </div>
 
     <div class="field">
