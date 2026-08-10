@@ -13,6 +13,7 @@ const els = {};
 
 function cacheEls() {
   els.status = document.getElementById('status');
+  els.statusDetail = document.getElementById('statusDetail');
   els.primary = document.getElementById('primaryBtn');
   els.annotate = document.getElementById('annotateBtn');
   els.exportBtn = document.getElementById('exportBtn');
@@ -38,10 +39,17 @@ function truncateMiddle(str, max) {
   return `${str.slice(0, half)}…${str.slice(str.length - half)}`;
 }
 
+/** Headline word — the one thing worth reading at a glance. */
 function statusText(state) {
   if (!state.recording) return 'Idle';
+  return state.annotating ? 'Annotating' : 'Recording';
+}
+
+/** Supporting detail line; empty when there is nothing to say. */
+function statusDetailText(state) {
+  if (!state.recording) return 'Nothing is being captured yet.';
   const elapsed = state.startedAt ? formatDuration(Date.now() - state.startedAt) : '00:00';
-  return `Recording · ${state.eventCount} events · ${state.annotationCount} notes · ${elapsed}`;
+  return `${state.eventCount} events · ${state.annotationCount} notes · ${elapsed}`;
 }
 
 function sendMessage(message) {
@@ -63,6 +71,7 @@ function showError(message) {
 function render(state) {
   currentState = state;
   els.status.textContent = statusText(state);
+  els.statusDetail.textContent = statusDetailText(state);
   els.primary.textContent = state.recording ? 'Stop' : 'Start session';
 
   els.annotate.classList.toggle('active', Boolean(state.annotating));
