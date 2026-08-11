@@ -55,6 +55,7 @@ export const STORAGE = Object.freeze({
   SESSION: 'bugpin.session',      // Session (without screenshot payloads)
   SHOT_PREFIX: 'bugpin.shot.',    // + annotationIndex -> { full: dataUrl, element: dataUrl }
   OPTIONS: 'bugpin.options',      // Options
+  EXPORTS: 'bugpin.exports',      // exportFolderName -> session id that owns it
 });
 
 export const LIMITS = Object.freeze({
@@ -158,6 +159,12 @@ re-exporting the same session targets the same folder. Files are written with
 `conflictAction: 'overwrite'` — per-file uniquifying would rename `report.md`
 to `report (1).md` while a newly added `shots/02-*.jpg` kept its name, leaving
 the report's image links dangling and stale content under the expected name.
+
+Because the name carries only minutes, two *different* sessions in the same
+minute whose first note reads the same would collide — and overwrite semantics
+would then destroy the first session's evidence. `STORAGE.EXPORTS` records which
+session owns each folder; a different session takes `<folder>-2`, `-3`, and so
+on, while the owning session keeps overwriting its own.
 
 ## 5. Behaviour rules
 

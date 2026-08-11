@@ -198,3 +198,57 @@ test('describeElement throws for a non-element input', () => {
   assert.throws(() => describeElement(null), TypeError);
   assert.throws(() => describeElement({}), TypeError);
 });
+
+/**
+ * Gives a fake tree a document that can answer uniqueness questions, so the
+ * shortest-unique path is exercised the way a real page drives it.
+ */
+function withDocument(root, matches) {
+  const doc = { querySelectorAll: (sel) => matches[sel] ?? [] };
+  const attach = (node) => {
+    node.ownerDocument = doc;
+    (node.children || []).forEach(attach);
+  };
+  attach(root);
+  return doc;
+}
+
+test('cssSelectorFor stops at the first unique selector instead of walking to body', () => {
+  const h1 = createElement('h1', { className: 'title lead' });
+  const wrapper = createElement('div', { className: 'header' }, [h1]);
+  const body = createElement('body', {}, [wrapper]);
+  withDocument(body, { 'h1.title.lead': [h1] });
+  // Real pages nest 8+ utility-class divs; the old builder emitted the whole chain.
+  assert.equal(cssSelectorFor(h1), 'h1.title.lead');
+});
+
+test('cssSelectorFor adds an ancestor only when the short form is ambiguous', () => {
+  const a = createElement('h1', { className: 'title' });
+  const b = createElement('h1', { className: 'title' });
+  const wrapper = createElement('div', { id: 'sidebar' }, [b]);
+  const body = createElement('body', {}, [a, wrapper]);
+  withDocument(body, {
+    'h1.title': [a, b],
+    'h1:nth-of-type(1)': [a, b],
+    'h1.title:nth-of-type(1)': [a, b],
+    '#sidebar > h1.title:nth-of-type(1)': [b],
+  });
+  assert.equal(cssSelectorFor(b), '#sidebar > h1.title:nth-of-type(1)');
+});
+
+test('classChain drops utility classes too long to read and caps the count', () => {
+  const el = createElement('h1', {
+    className: 'text-balance font-normal hover:bg-[oklch(0.7_0.2_240)]/50 lead extra',
+  });
+  const chain = classChain(el);
+  assert.equal((chain.match(/\./g) || []).length, 2);
+  assert.doesNotMatch(chain, /oklch/);
+});
+
+test('cssSelectorFor still builds a structural path when the document cannot be queried', () => {
+  const h1 = createElement('h1', { className: 'title' });
+  const wrapper = createElement('div', { className: 'header' }, [h1]);
+  createElement('body', {}, [wrapper]);
+  // No ownerDocument: the fallback must still produce something usable.
+  assert.match(cssSelectorFor(h1), /h1\.title:nth-of-type\(1\)/);
+});

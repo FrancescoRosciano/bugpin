@@ -181,6 +181,13 @@
     const textarea = document.createElement('textarea');
     textarea.placeholder = "What's wrong here? e.g. delete this";
     textarea.addEventListener('keydown', onTextareaKeyDown);
+    // A closed shadow root retargets events to the host, so a page's hotkey
+    // handler cannot tell that the real target is a textarea and happily acts
+    // on plain letters — GitHub's "s" focuses its search box and eats the
+    // keystroke mid-note. Keep every key inside the overlay.
+    for (const type of ['keydown', 'keypress', 'keyup', 'input', 'beforeinput']) {
+      textarea.addEventListener(type, stopKeyFromReachingPage);
+    }
 
     const hint = document.createElement('div');
     hint.className = 'hint';
@@ -442,6 +449,11 @@
 
   function showBoxError(message) {
     state.elements.error.textContent = message || '';
+  }
+
+  /** Lets the textarea handle the key, then stops the page from ever seeing it. */
+  function stopKeyFromReachingPage(e) {
+    e.stopPropagation();
   }
 
   function onTextareaKeyDown(e) {

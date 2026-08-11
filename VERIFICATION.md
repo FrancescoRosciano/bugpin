@@ -292,6 +292,34 @@ annotation headings were `##` inside a `##` section (now `###`), and the
 generated spec did `fill('«redacted»')`, which would type the placeholder into
 the field (now a `process.env.BUGPIN_SECRET` line with a TODO).
 
+## 3c. Real-site pass (2026-08-10)
+
+Three live sites, each: load → scroll → annotate an `<h1>` → export. Wikipedia
+(plain), GitHub (SPA routing, strict CSP), Vercel (dark background). All three
+injected the overlay, saved the note, took both shots and wrote a full export;
+no service-worker errors. Kept out of the repo test suite — it depends on sites
+that change under us.
+
+It found three defects, all fixed:
+
+- **Page hotkeys stole keystrokes mid-note.** On GitHub the note saved as
+  `delete thi`: a closed shadow root retargets events to the host, so GitHub's
+  hotkey handler could not tell the real target was a textarea and treated `s`
+  as its "focus search" shortcut. `content-annotate.js` now stops key and input
+  events from leaving the overlay.
+- **Different sessions overwrote each other's exports.** The folder name carries
+  only minutes, so two sessions in the same minute with the same first note
+  collided — and `conflictAction: 'overwrite'` (C5) then destroyed the earlier
+  session's evidence. `STORAGE.EXPORTS` records folder → owning session id;
+  a different session takes `-2`, `-3`, while re-exporting the same session
+  still overwrites itself. **[PROTOCOL CHANGE]** §4.
+- **Selectors on real pages were unusable.** The GitHub `<h1>` produced a
+  400-character chain walked all the way to `body`; Vercel's was worse.
+  `lib/selector.js` now grows a selector outward only until it resolves
+  uniquely, and drops utility classes over 24 chars (max 2 per segment).
+  Same three elements now yield `#firstHeading`, `h1.h2.lh-condensed` and
+  `h1.text-balance.font-normal\!`.
+
 ## 4. Still NOT verified — needs a human in a real Chrome
 
 Two browser harnesses now run against a real Chromium:
@@ -318,10 +346,9 @@ dependent to stage reliably:
    verified by the SW simulation's degradation path, not by a real race.
 4. **Storage quota (C4).** 25 annotations on a large viewport, then Discard,
    confirming no `QUOTA_BYTES` error and no leftover `bugpin.shot.N` keys.
-5. **Behaviour on real sites.** The test page is trivially simple. Worth one
-   pass over an SPA that rewrites the DOM, a page with a strict CSP, a dark
-   site (overlay contrast), and a page with iframes (`all_frames: false` means
-   only the top document is captured).
+5. **Pages with iframes.** `all_frames: false` means only the top document is
+   captured; the real-site pass (§3c) covered SPA routing, strict CSP and a
+   dark background, but nothing cross-frame.
 
 Pin restore has no assertion — the pins live in a closed shadow root, so no
 query can count them. The harness writes `after-reload.png` next to the export
@@ -361,3 +388,15 @@ instead; both pins and the "2 notes" chip are visible in it.
 | `test/browser/harness.mjs` | New — shared launch/serve/message plumbing |
 | `test/browser-ui.mjs` | New — the 32-check popup / options / scenarios harness |
 | `content-annotate.js` | Hide the pins layer during a capture too, so earlier pins stay out of later screenshots |
+
+### Changed from the real-site pass (§3c)
+
+| File | Change |
+| --- | --- |
+| `content-annotate.js` | Keys and input events no longer escape the overlay, so page hotkeys cannot steal characters mid-note |
+| `lib/selector.js` | Shortest-unique selector growth + utility-class filtering |
+| `lib/export.js` | `claimFolder()` — export folders are owned by a session id |
+| `background.js` | `claimExportFolder()` bookkeeping around the export |
+| `lib/messages.js`, `PROTOCOL.md` | `STORAGE.EXPORTS` and the collision rule in §4 |
+| `test/selector.test.mjs` | 4 tests added |
+| `test/export.test.mjs` | 4 tests added (`claimFolder`) |

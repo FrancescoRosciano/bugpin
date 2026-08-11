@@ -16,6 +16,7 @@ import {
   renderSystemInfo,
   renderPlaywrightSpec,
   buildExport,
+  claimFolder,
 } from '../lib/export.js';
 
 const STARTED_AT = Date.UTC(2024, 2, 15, 10, 0, 0); // 2024-03-15T10:00:00.000Z
@@ -549,4 +550,30 @@ test('buildExport: does not mutate the input session', () => {
   const before = JSON.stringify(session);
   buildExport(session);
   assert.equal(JSON.stringify(session), before);
+});
+
+test('claimFolder: the owning session keeps its folder across re-exports', () => {
+  const claims = { '08-10-17.12-delete-this': 'session-a' };
+  assert.equal(claimFolder('08-10-17.12-delete-this', claims, 'session-a'), '08-10-17.12-delete-this');
+});
+
+test('claimFolder: a different session in the same minute is given a suffix', () => {
+  const claims = { '08-10-17.12-delete-this': 'session-a' };
+  // Without this, session-b's export would overwrite session-a's evidence.
+  assert.equal(claimFolder('08-10-17.12-delete-this', claims, 'session-b'), '08-10-17.12-delete-this-2');
+});
+
+test('claimFolder: suffixes keep climbing past taken ones', () => {
+  const claims = {
+    '08-10-17.12-x': 'a',
+    '08-10-17.12-x-2': 'b',
+    '08-10-17.12-x-3': 'c',
+  };
+  assert.equal(claimFolder('08-10-17.12-x', claims, 'd'), '08-10-17.12-x-4');
+  assert.equal(claimFolder('08-10-17.12-x', claims, 'b'), '08-10-17.12-x-2');
+});
+
+test('claimFolder: an empty or missing claim map is fine', () => {
+  assert.equal(claimFolder('08-10-17.12-x', {}, 'a'), '08-10-17.12-x');
+  assert.equal(claimFolder('08-10-17.12-x', null, 'a'), '08-10-17.12-x');
 });

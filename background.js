@@ -29,7 +29,7 @@
 
 import { MSG, STORAGE, DEFAULT_OPTIONS } from './lib/messages.js';
 import { createStore } from './lib/capture-store.js';
-import { buildExport } from './lib/export.js';
+import { buildExport, claimFolder } from './lib/export.js';
 import { redactUrl } from './lib/redact.js';
 import { createNetworkCapture } from './lib/network-capture.js';
 import { captureAnnotationShots } from './lib/shots.js';
@@ -399,12 +399,34 @@ async function collectShotBlobs(session) {
   return blobs;
 }
 
+/**
+ * Records which session owns which export folder, so a later session cannot
+ * overwrite an earlier one's evidence while a re-export of the same session
+ * still overwrites itself (PROTOCOL §4). Best-effort: if the bookkeeping read
+ * or write fails, the export proceeds under the plain folder name.
+ */
+async function claimExportFolder(base, sessionId) {
+  try {
+    const stored = await chrome.storage.local.get(STORAGE.EXPORTS);
+    const claims = stored[STORAGE.EXPORTS] || {};
+    const folder = claimFolder(base, claims, sessionId);
+    if (claims[folder] !== sessionId) {
+      await chrome.storage.local.set({ [STORAGE.EXPORTS]: { ...claims, [folder]: sessionId } });
+    }
+    return folder;
+  } catch (err) {
+    console.error('[bugpin] could not claim an export folder', err);
+    return base;
+  }
+}
+
 async function handleExport() {
   try {
     await persister.flush();
     const session = store.getSession();
     if (!session) return { ok: false, error: 'no active session' };
-    const { folder, files } = buildExport(session);
+    const { folder: base, files } = buildExport(session);
+    const folder = await claimExportFolder(base, session.id);
     const blobs = await collectShotBlobs(session);
     const written = await writeExportFolder({ folder, files, blobs });
     // The folder path is copied by the popup (PROTOCOL §6 copyPathOnExport):
