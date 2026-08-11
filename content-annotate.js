@@ -412,12 +412,15 @@
    * screenshot the service worker is about to take shows the page, not the tool.
    */
   function hideOverlayForCapture() {
-    const { noteBox, hoverBox, tooltip, chip } = state.elements;
+    const { noteBox, hoverBox, tooltip, chip, pinsLayer } = state.elements;
     noteBox.hidden = true;
     hoverBox.classList.remove('solid');
     hoverBox.hidden = true;
     tooltip.hidden = true;
     chip.hidden = true;
+    // Earlier pins are BugPin's own markers; they would otherwise sit on top of
+    // the page in every screenshot taken after the first annotation.
+    pinsLayer.hidden = true;
   }
 
   /** Brings the note box back with its text after a failed save. */
@@ -522,6 +525,7 @@
       reopenNoteBox(target, note, saveErrorMessage(err));
     } finally {
       saveBtn.disabled = false;
+      state.elements.pinsLayer.hidden = false;
       if (state.annotating) state.elements.chip.hidden = false;
     }
   }

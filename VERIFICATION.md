@@ -294,41 +294,38 @@ the field (now a `process.env.BUGPIN_SECRET` line with a TODO).
 
 ## 4. Still NOT verified — needs a human in a real Chrome
 
-The Chromium harness (§3b) covers the load, the crop, the export layout, the
-`data:` downloads and redaction end to end. What remains needs either the real
-Chrome UI (the popup, the keyboard command) or a scenario the harness does not
-stage.
+Two browser harnesses now run against a real Chromium:
 
-1. **The popup and options pages.** The harness drives the extension by message,
-   never by clicking `popup.html`. Open the popup: confirm the status headline,
-   the note count ticking up, the export path line, and that Options saves.
-2. **The `Cmd/Ctrl+Shift+E` command.** `chrome.commands` cannot be triggered by
-   synthesized input, so annotate mode has only ever been toggled by message.
-3. **`conflictAction: 'overwrite'` (C5).** Export, add a second annotation,
-   export again. Confirm one folder, no `report (1).md`, and that `report.md`
-   holds the second export with working image links.
-4. **Wrong-tab screenshot guard (C6).** Annotate, then switch tabs while a
-   capture is queued. The annotation should save with null shots rather than a
-   screenshot of the unrelated tab.
-5. **Early `SET_MODE` buffering (C8).** Hit the shortcut the instant a heavy page
-   finishes loading; the overlay must actually activate, not just the badge.
-6. **Tab-close stop (C7).** Start a session, close the tab without opening the
-   popup. The badge should clear and the session should still export.
-7. **Blob-rule false positives (C2).** `console.error` a git SHA, a 32-char hex
-   id and a stack trace with an absolute path; all three must survive intact,
-   while a mixed-case 40-char API key is redacted.
-8. **Storage quota (C4).** 25 annotations on a large viewport with no
-   `QUOTA_BYTES` error, then Discard and confirm every `bugpin.shot.N` key is
-   gone.
-9. **Pin restore across a reload (`RESTORE_PINS`).** The harness annotates once
-   and exports; it never reloads the page to check the pins come back.
-10. **Multiple annotations and pin layout.** Only the single-annotation path has
-    been exercised. Place several, scroll, resize, and confirm the pins track
-    their elements.
+| Script | Covers | Result |
+| --- | --- | --- |
+| `npm run test:browser` (`test/browser-loadtest.mjs`) | load, capture, annotate, screenshot, export layout, redaction | 21/21 |
+| `npm run test:browser:ui` (`test/browser-ui.mjs`) | popup, options page, command registration, re-export, tab close, blob false positives, two annotations, pin restore | 32/32 |
 
-Content scripts still have no unit tests — PROTOCOL §7 mandates them only for
-the four pure modules. Their behaviour is now covered by the browser harness
-rather than by reading alone.
+What is left genuinely cannot be automated, or is a scenario too timing-
+dependent to stage reliably:
+
+1. **The actual `Cmd/Ctrl+Shift+E` keystroke.** Extension commands are
+   dispatched by the browser process from native key events; CDP input reaches
+   only the renderer. The harness verifies Chrome accepted and bound the
+   shortcut (`chrome.commands.getAll()` → `⇧⌘E`) and that the handler's code
+   path — `TOGGLE_ANNOTATE` — works. The keypress itself is untested.
+2. **Real toolbar-popup semantics.** The harness opens `popup.html` as an
+   ordinary tab, so `chrome.tabs.query({active: true})` sees the popup's own
+   tab. Every button is verified there, but in the real popup "Start session"
+   binds the page underneath — confirm that once by hand.
+3. **Wrong-tab screenshot guard (C6).** Requires switching tabs inside the
+   window between the note being saved and the capture completing. The guard is
+   verified by the SW simulation's degradation path, not by a real race.
+4. **Storage quota (C4).** 25 annotations on a large viewport, then Discard,
+   confirming no `QUOTA_BYTES` error and no leftover `bugpin.shot.N` keys.
+5. **Behaviour on real sites.** The test page is trivially simple. Worth one
+   pass over an SPA that rewrites the DOM, a page with a strict CSP, a dark
+   site (overlay contrast), and a page with iframes (`all_frames: false` means
+   only the top document is captured).
+
+Pin restore has no assertion — the pins live in a closed shadow root, so no
+query can count them. The harness writes `after-reload.png` next to the export
+instead; both pins and the "2 notes" chip are visible in it.
 
 ## 5. Files changed
 
@@ -359,5 +356,8 @@ rather than by reading alone.
 | `content-annotate.js` | Hide the status chip too before a capture, restore after |
 | `manifest.json` | Real PNG icon set wired up (`icons` + `action.default_icon`) |
 | `tools/make-icons.mjs` | New — dependency-free PNG rasterizer for the icon |
-| `test/browser-loadtest.mjs` | New — the 21-check Chromium harness |
+| `test/browser-loadtest.mjs` | New — the 21-check Chromium session harness |
 | `test/export.test.mjs` | 1 test rewritten (heading level), 1 added (redacted fill) |
+| `test/browser/harness.mjs` | New — shared launch/serve/message plumbing |
+| `test/browser-ui.mjs` | New — the 32-check popup / options / scenarios harness |
+| `content-annotate.js` | Hide the pins layer during a capture too, so earlier pins stay out of later screenshots |

@@ -133,7 +133,8 @@ full session (start → activity → annotate → save → export), asserting 21
 about the result:
 
 ```
-npm run test:browser
+npm run test:browser      # 21 checks: load, capture, annotate, shots, export
+npm run test:browser:ui   # 32 checks: popup, options, re-export, tab close, pins
 ```
 
 It needs Playwright with the full `chromium` channel; the default headless

@@ -7,6 +7,7 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "test:browser": "node test/browser-loadtest.mjs",
-    "icons": "node tools/make-icons.mjs"
+    "icons": "node tools/make-icons.mjs",
+    "test:browser:ui": "node test/browser-ui.mjs"
   }
 }
