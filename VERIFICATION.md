@@ -13,7 +13,7 @@ it (flagged **[PROTOCOL CHANGE]** below) and propagated to every affected file.
 
 | Command | Status |
 | --- | --- |
-| `cd /Users/fra/Desktop/codes/bugpin && node --test test/*.test.mjs` | **PASS — `ℹ fail 0`, 126/126 tests** (was 110; 16 added, 2 rewritten) |
+| `node --test test/*.test.mjs` | **PASS — `ℹ fail 0`, 126/126 tests** (was 110; 16 added, 2 rewritten) |
 | `node --check` on the 3 classic content scripts | PASS |
 | `node --input-type=module --check` on `background.js`, `popup.js`, `options.js`, `lib/*.js` (11 modules) | PASS |
 | `JSON.parse` on `manifest.json`, `package.json` | PASS |
@@ -70,7 +70,7 @@ as a network/nav event.
 ### C2 — Over-broad `BLOB_RE` shredded diagnostics *(protocol #6)* — HIGH (report said MEDIUM)
 **Confirmed, and more severe than reported.** `/[A-Za-z0-9+/_=-]{32,}/g` includes
 `/`, so it did not just eat a hex order id — it ate **file paths in stack
-traces**: `/Users/fra/Desktop/codes/bugpin/lib` is 35 chars of that alphabet and
+traces**: `/home/dev/projects/bugpin/lib/redact.js` is 39 chars of that alphabet and
 became `«redacted»`. Nothing in PROTOCOL §5 asked for a generic blob rule.
 
 **Fixed:** narrowed to a standalone run of ≥ 32 base64url chars that mixes
