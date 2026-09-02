@@ -116,7 +116,7 @@ if (dir) {
   check('git-SHA-shaped id survives redaction',
     consoleTxt.includes('4f3d2c1b9a8e7f6d5c4b3a2918273645'));
   check('stack-trace path survives redaction',
-    consoleTxt.includes('/Users/fra/Desktop/codes/bugpin/lib/x.js'));
+    consoleTxt.includes('/home/dev/projects/bugpin/lib/x.js'));
   check('sk- API key is redacted',
     !consoleTxt.includes('sk-Ab3Cd4Ef5Gh6Ij7Kl8Mn9Op0Qr1St2Uv3Wx4Yz5Ab6'));
   const report = readFileSync(join(dir, 'report.md'), 'utf8');

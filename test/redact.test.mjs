@@ -71,7 +71,7 @@ test('redactString leaves single-case identifiers alone however long', () => {
 test('redactString never shreds file paths in stack traces', () => {
   // Every char here is in the base64url alphabet and the run is > 32 chars,
   // so the old unbounded blob rule replaced the whole path with «redacted».
-  const stack = 'at renderReport (/Users/fra/Desktop/codes/bugpin/lib/export.js:31:7)';
+  const stack = 'at renderReport (/home/dev/projects/bugpin/lib/export.js:31:7)';
   assert.equal(redactString(stack, true), stack);
 });
 

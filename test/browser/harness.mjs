@@ -43,7 +43,7 @@ export const TEST_PAGE_HTML = `<!doctype html><html><head><meta charset="utf-8">
   <script>
     console.log('page booted');
     console.error('BOOM: something went wrong in checkout');
-    console.error('order 4f3d2c1b9a8e7f6d5c4b3a2918273645 failed at /Users/fra/Desktop/codes/bugpin/lib/x.js');
+    console.error('order 4f3d2c1b9a8e7f6d5c4b3a2918273645 failed at /home/dev/projects/bugpin/lib/x.js');
     console.error('key sk-Ab3Cd4Ef5Gh6Ij7Kl8Mn9Op0Qr1St2Uv3Wx4Yz5Ab6 rejected');
     fetch('/missing-endpoint?token=abcdef1234567890').catch(() => {});
   </script>
