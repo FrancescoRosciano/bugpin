@@ -153,7 +153,7 @@ about long opaque strings so it doesn't shred hex ids, git SHAs or file
 paths in stack traces. Review an export folder yourself before sharing it,
 especially if you disable the redaction option.
 
-## Packaging for the Chrome Web Store
+## Packaging and distribution
 
 `npm run package` writes `dist/bugpin-<version>.zip` from an explicit
 allowlist — the manifest, the extension's scripts and pages, `lib/` and the
@@ -161,17 +161,24 @@ icons. It refuses to build if `manifest.json` and `package.json` disagree on
 the version, if a listed file is missing, or if the manifest references
 something the archive would not contain.
 
-Verify the artifact rather than the working tree before uploading it:
+Verify the artifact rather than the working tree before publishing it:
 
 ```
 npm run package
-rm -rf /tmp/bugpin-pkg && unzip -q dist/bugpin-0.1.0.zip -d /tmp/bugpin-pkg
+rm -rf /tmp/bugpin-pkg && unzip -q dist/bugpin-1.0.0.zip -d /tmp/bugpin-pkg
 BUGPIN_EXT_DIR=/tmp/bugpin-pkg npm run test:browser
 ```
 
-Listing copy, permission justifications, store-sized screenshots and the
-submission checklist live in
-[docs/chrome-web-store.md](docs/chrome-web-store.md).
+That drives a full session against the unzipped build in a real Chromium — the
+same 21 checks, pointed at the thing being shipped.
+
+Chrome refuses to install an extension from a downloaded `.crx`, so a GitHub
+release ships the zip and users load it unpacked. The routes that give
+one-click installs and automatic updates are the Edge Add-ons store, which is
+free, and the Chrome Web Store, which charges a one-time $5 developer
+registration fee. [docs/distribution.md](docs/distribution.md) covers all
+three, with the listing copy, a justification per permission and the
+pre-publish checklist.
 
 ## Tests
 
@@ -214,3 +221,7 @@ stale image means the script was not re-run rather than that the UI was
 described from memory. `npm run screenshots:store` runs the same session at
 the 1280x800 the Chrome Web Store requires and writes to `docs/store/`. Both
 need the same Playwright the browser tests do.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

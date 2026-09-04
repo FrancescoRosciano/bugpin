@@ -1,42 +1,90 @@
-# Chrome Web Store submission
+# Distributing BugPin
 
-Everything needed to publish BugPin, plus the parts only the publisher can do.
+Three ways to get BugPin onto someone's machine. Only one of them costs money,
+and it is not the one you have to start with.
 
-Build the upload artifact with `npm run package`, which writes
-`dist/bugpin-<version>.zip` from an explicit allowlist — the manifest, the
-extension's scripts and pages, `lib/`, and the four icons. Tests, tooling, the
-demo app and the docs stay out. The script refuses to build if `manifest.json`
-and `package.json` disagree on the version, if a listed file is missing, or if
-the manifest references something the archive would not contain.
+| Route | Cost | Who can install | Auto-updates |
+|---|---|---|---|
+| GitHub release, loaded unpacked | free | anyone willing to turn on Developer mode | no |
+| Microsoft Edge Add-ons | free | Edge users, one click | yes |
+| Chrome Web Store | **$5 one-time** | Chrome users, one click | yes |
 
-Verify the artifact before uploading it, rather than trusting the working tree:
+The $5 is a one-time Google developer registration fee. It is mandatory, covers
+every extension you ever publish under that account, and has no free tier and
+no waiver. Until it is paid, the Chrome Web Store is closed.
+
+**A self-hosted `.crx` is not a fourth option.** Chrome on Windows and macOS
+refuses to install a `.crx` that did not come from the Web Store, and disables
+it if you sideload it anyway. Only two things work outside the store: loading an
+unpacked folder with Developer mode on, or force-installing through enterprise
+policy on managed devices.
+
+## Build the artifact
+
+`npm run package` writes `dist/bugpin-<version>.zip` from an explicit allowlist —
+the manifest, the extension's scripts and pages, `lib/`, and the four icons.
+Tests, tooling, the demo app and the docs stay out. It refuses to build if
+`manifest.json` and `package.json` disagree on the version, if a listed file is
+missing, or if the manifest references something the archive would not contain.
+
+Verify the artifact rather than the working tree before publishing it anywhere:
 
 ```
 npm run package
-rm -rf /tmp/bugpin-pkg && unzip -q dist/bugpin-0.1.0.zip -d /tmp/bugpin-pkg
+rm -rf /tmp/bugpin-pkg && unzip -q dist/bugpin-1.0.0.zip -d /tmp/bugpin-pkg
 BUGPIN_EXT_DIR=/tmp/bugpin-pkg npm run test:browser
 ```
 
 That loads the unzipped build into a real Chromium and drives a full session
-against it. It is the same 21 checks the repository runs, pointed at the thing
-being shipped.
+against it — the same 21 checks the repository runs, pointed at the thing being
+shipped.
 
-## What only the publisher can do
+## Route 1 — GitHub release
 
-These need a signed-in Google account and cannot be automated:
+Free, works today, and the only route that needs nobody's approval.
 
-1. Register at the [Developer Dashboard](https://chrome.google.com/webstore/devconsole)
-   and pay the one-time **$5 USD** registration fee.
+```
+npm run package
+gh release create v1.0.0 dist/bugpin-1.0.0.zip \
+  --title "BugPin 1.0.0" --notes-file docs/release-notes-1.0.0.md
+```
+
+Users then unzip it and follow the "Load unpacked" section of the
+[README](../README.md). The cost is that Developer mode has to stay on and
+there are no automatic updates — people upgrade by downloading the next zip.
+
+## Route 2 — Microsoft Edge Add-ons
+
+A real store listing, one-click install, automatic updates, and **no
+registration fee**. It takes the same zip: Edge is Chromium, and an MV3
+extension that runs in Chrome runs there unmodified.
+
+Register at [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/overview),
+create a submission, upload the zip, and fill in the listing from the copy
+below. The catch is reach — an Edge listing does not put BugPin in front of
+Chrome users, who are most of the market for a debugging tool.
+
+Verify the current fee situation yourself before committing; Microsoft can
+change it, and a policy that was free is not guaranteed to stay free.
+
+## Route 3 — Chrome Web Store
+
+Blocked on the $5 fee. Everything else is ready. When and if you pay it:
+
+1. Register at the [Developer Dashboard](https://chrome.google.com/webstore/devconsole).
 2. Turn on 2-Step Verification for that Google account — the dashboard requires
    it before a listing can be published.
-3. Verify a publisher contact email address in account settings. An unverified
-   contact email blocks publishing.
+3. Verify a publisher contact email. An unverified address blocks publishing.
 4. Upload the zip, fill in the listing below, and submit for review.
 
 Review for a first submission that asks for broad host access usually takes
-several days, and can take longer. Expect follow-up questions.
+several days, and can take longer. Expect follow-up questions, most likely
+about `<all_urls>`.
 
 ## Listing copy
+
+Written for the Chrome Web Store's fields; Edge asks for the same things under
+slightly different names.
 
 **Extension name** (from `manifest.json`, 45 characters)
 
@@ -101,12 +149,13 @@ Cmd+Shift+E (Ctrl+Shift+E on Windows and Linux) toggles annotate mode, and
 starts a session if one isn't running yet. Enter saves a note, Shift+Enter adds
 a newline, Esc leaves annotate mode without losing the session.
 
-Open source: https://github.com/FrancescoRosciano/bugpin
+Open source under the MIT license:
+https://github.com/FrancescoRosciano/bugpin
 ```
 
 ## Single purpose
 
-The dashboard requires a one-sentence single-purpose statement:
+Both stores require a one-sentence single-purpose statement:
 
 ```
 BugPin captures a debugging session on a web page — console output, network
@@ -117,7 +166,7 @@ folder.
 
 ## Permission justifications
 
-The dashboard asks for one per permission. These are written to be pasted in.
+One per permission, written to be pasted in.
 
 | Permission | Justification |
 |---|---|
@@ -133,9 +182,9 @@ The dashboard asks for one per permission. These are written to be pasted in.
 
 ## Data usage disclosures
 
-BugPin transmits nothing off the device, so it collects no user data under the
-Chrome Web Store's definition. Confirm each answer against the current form
-before submitting; the questions change.
+BugPin transmits nothing off the device, so it collects no user data under
+either store's definition. Confirm each answer against the current form before
+submitting; the questions change.
 
 - Certify that the data is **not** sold or transferred to third parties beyond
   the approved use cases.
@@ -143,26 +192,26 @@ before submitting; the questions change.
   item's single purpose.
 - Certify that it is **not** used or transferred to determine creditworthiness
   or for lending purposes.
-- Privacy policy URL: publish [PRIVACY.md](../PRIVACY.md) at a stable public
-  address and paste it here. The GitHub blob URL works; GitHub Pages is tidier.
+- Privacy policy URL:
+  <https://github.com/FrancescoRosciano/bugpin/blob/main/PRIVACY.md>
 
 ## Graphics
 
 | Asset | Requirement | Where |
 |---|---|---|
 | Store icon | 128x128 PNG | `icons/icon128.png` |
-| Screenshots | 1280x800 PNG, at least one, up to five | `docs/store/` — five, regenerate with `npm run screenshots:store` |
-| Small promo tile | 440x280 PNG, optional | not produced; add by hand if wanted |
-| Marquee promo tile | 1400x560 PNG, optional | not produced |
+| Screenshots | 1280x800 PNG, at least one, up to five | `docs/store/` — regenerate with `npm run screenshots:store` |
+| Small promo tile | 440x280 PNG, optional | `docs/store/promo-440x280.png` |
+| Marquee promo tile | 1400x560 PNG, optional | `docs/store/promo-1400x560.png` |
 
-The store rejects screenshots that are not exactly 1280x800 (or 640x400), which
-is why the store profile is a separate npm script from the README gallery.
+Both stores reject screenshots that are not exactly 1280x800 (or 640x400),
+which is why the store profile is a separate npm script from the README
+gallery. `npm run promo` regenerates the two tiles.
 
-## Before submitting
+## Before publishing anywhere
 
 - [ ] `npm test`, `npm run test:browser`, `npm run test:browser:ui` all pass
 - [ ] `npm run package` succeeds and the unzipped build passes the browser suite
 - [ ] Version bumped in **both** `manifest.json` and `package.json`
-- [ ] Privacy policy published at a public URL and pasted into the listing
-- [ ] Publisher contact email verified, 2-Step Verification on
 - [ ] Screenshots regenerated if any UI changed
+- [ ] Store routes only: publisher contact email verified, 2-Step Verification on
