@@ -65,11 +65,13 @@ export async function startTestServer() {
 
 /**
  * Launches Chromium with the extension loaded and downloads pointed at a
- * scratch directory. Download handling is left on Chrome's 'default' behaviour:
+ * scratch directory. `contextOptions` is merged last into the Playwright launch
+ * options, so a caller can override the viewport or device scale factor (the
+ * screenshot tool wants a 2x retina context; the tests want the default). Download handling is left on Chrome's 'default' behaviour:
  * Playwright's interception renames files to GUIDs, and CDP's 'allow' renames
  * them to download.<ext> — both would destroy the folder layout under test.
  */
-export async function launchWithExtension({ baseDir } = {}) {
+export async function launchWithExtension({ baseDir, contextOptions = {} } = {}) {
   const base = baseDir || mkdtempSync(join(tmpdir(), 'bugpin-browser-'));
   const profile = join(base, 'chrome-profile');
   const downloads = join(base, 'downloads');
@@ -91,6 +93,7 @@ export async function launchWithExtension({ baseDir } = {}) {
     headless: true,
     acceptDownloads: false,
     args: [`--disable-extensions-except=${EXT_DIR}`, `--load-extension=${EXT_DIR}`, '--no-first-run'],
+    ...contextOptions,
   });
 
   const page = context.pages()[0] ?? (await context.newPage());

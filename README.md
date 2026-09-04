@@ -12,6 +12,44 @@ selector for that element, and stamps a numbered pin. Exporting turns all
 of that into a single self-contained folder you can drop straight into an
 AI coding agent instead of writing up a bug report by hand.
 
+## What it looks like
+
+Annotate mode outlines whatever you hover and names the selector it would
+record, so you can see what is about to be pinned before you click.
+
+![BugPin annotate mode: the hovered button outlined in blue, its selector shown in a tooltip, and an exit chip in the corner](docs/screenshots/01-annotate-mode.png)
+
+Clicking opens a note box on that element. Enter saves, Shift+Enter adds a
+newline, Esc backs out without losing the session.
+
+![The BugPin note box open on a button with a note typed into it](docs/screenshots/02-note.png)
+
+Saved notes stay on the page as numbered pins for as long as annotate mode is
+on, so it stays obvious what you have already covered.
+
+![The demo page with three numbered BugPin pins on the elements that were annotated](docs/screenshots/03-pins.png)
+
+The popup is the session's control surface — what is being captured, how much
+of it there is, and the two ways out. After an export it shows where the folder
+landed.
+
+<table>
+<tr>
+<td><img alt="The BugPin popup mid-session, showing 14 events, 3 notes and an elapsed timer" src="docs/screenshots/04-popup.png" width="320" /></td>
+<td><img alt="The BugPin popup after an export, showing the folder path it wrote" src="docs/screenshots/05-popup-exported.png" width="320" /></td>
+</tr>
+</table>
+
+`report.md` is what the export is for: every annotation with its selector, its
+screenshots and the events that surrounded it, then the full timeline
+underneath.
+
+![The top of an exported report.md: session summary, the first annotation with its element crop and full-page shot, and the nearby console and network events](docs/screenshots/07-report.png)
+
+Screenshots, buffer size and redaction are all switchable on the options page.
+
+![The BugPin options page, showing the capture and privacy settings at their defaults](docs/screenshots/06-options.png)
+
 ## Load unpacked
 
 1. Open `chrome://extensions`.
@@ -147,3 +185,9 @@ BUGPIN_PLAYWRIGHT=/path/to/node_modules/playwright/index.mjs npm run test:browse
 
 Toolbar icons are generated, not committed by hand — `npm run icons` rasterizes
 `icons/icon{16,32,48,128}.png` with no dependencies.
+
+The README screenshots are generated too. `npm run screenshots` loads BugPin
+into the same real Chromium the browser tests use, records one session against
+the demo app in `tools/demo/`, and photographs each surface as it goes, so a
+stale image means the script was not re-run rather than that the UI was
+described from memory. It needs the same Playwright the browser tests do.

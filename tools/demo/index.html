@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Northwind — Billing</title>
+<style>
+  :root {
+    --ink: #0f1115;
+    --ink-2: #3d4351;
+    --ink-3: #6b7280;
+    --line: #e4e6eb;
+    --bg: #ffffff;
+    --surface: #f7f8fa;
+    --accent: #16181d;
+    --danger: #c2371f;
+    --ok: #1a7f4b;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    display: grid;
+    grid-template-columns: 216px 1fr;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* sidebar */
+  aside {
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    padding: 20px 14px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 9px;
+    padding: 0 8px 18px;
+    font-weight: 600; letter-spacing: -0.01em;
+  }
+  .brand .mark {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--accent);
+    display: grid; place-items: center;
+    color: #fff; font-size: 12px; font-weight: 700;
+  }
+  nav a {
+    display: block;
+    padding: 7px 8px;
+    margin-bottom: 2px;
+    border-radius: 6px;
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+  nav a:hover { background: rgba(15, 17, 21, 0.05); }
+  nav a[aria-current="page"] { background: rgba(15, 17, 21, 0.07); color: var(--ink); font-weight: 600; }
+  .nav-label {
+    padding: 14px 8px 6px;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3);
+  }
+
+  /* main */
+  main { padding: 24px 36px 28px; max-width: 860px; }
+  header h1 { font-size: 24px; letter-spacing: -0.02em; margin: 0 0 4px; }
+  header p { margin: 0 0 20px; color: var(--ink-3); }
+
+  section { margin-bottom: 20px; }
+  h2 { font-size: 15px; margin: 0 0 10px; letter-spacing: -0.01em; }
+
+  .card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    background: var(--bg);
+  }
+  .plan { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .plan .name { font-size: 17px; font-weight: 600; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .plan .meta { margin: 0; color: var(--ink-3); font-size: 13px; }
+  .badge {
+    display: inline-block; margin-left: 8px; padding: 1px 7px;
+    border-radius: 999px; font-size: 11px; font-weight: 600;
+    background: rgba(26, 127, 75, 0.12); color: var(--ok);
+    vertical-align: 2px;
+  }
+
+  button {
+    font: inherit;
+    padding: 7px 13px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { background: var(--surface); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { filter: brightness(0.94); }
+  button.danger { border-color: rgba(194, 55, 31, 0.4); color: var(--danger); }
+  button.danger:hover { background: rgba(194, 55, 31, 0.06); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  th { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+  th.amount { text-align: right; }
+  .status { font-size: 12px; color: var(--ok); }
+  .status.unpaid { color: var(--danger); }
+
+  .field { margin-bottom: 12px; max-width: 340px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 5px; }
+  .field input {
+    width: 100%; font: inherit; padding: 7px 9px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink);
+  }
+  .field input:focus { outline: 2px solid rgba(15, 17, 21, 0.28); outline-offset: 0; border-color: var(--accent); }
+
+  .danger-zone { border-color: rgba(194, 55, 31, 0.3); }
+  .danger-zone .row { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .danger-zone p { margin: 0; color: var(--ink-3); font-size: 13px; }
+  .danger-zone strong { display: block; color: var(--ink); font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+  <aside>
+    <div class="brand"><span class="mark">N</span> Northwind</div>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#projects">Projects</a>
+      <a href="#members">Members</a>
+      <div class="nav-label">Workspace</div>
+      <a href="#general">General</a>
+      <a href="#billing" aria-current="page">Billing</a>
+      <a href="#api">API keys</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header>
+      <h1>Billing</h1>
+      <p>Manage the plan, payment details and invoices for this workspace.</p>
+    </header>
+
+    <section>
+      <h2>Plan</h2>
+      <div class="card plan">
+        <div>
+          <p class="name">Team <span class="badge">Active</span></p>
+          <p class="meta">$49 / month · renews 12 Oct 2026 · 8 of 10 seats used</p>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button id="seats" type="button">Add seats</button>
+          <button id="upgrade" class="primary" type="button" data-testid="upgrade-plan">Upgrade plan</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Invoices</h2>
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Invoice</th><th>Date</th><th>Status</th><th class="amount">Amount</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>INV-2041</td><td>12 Sep 2026</td><td><span class="status">Paid</span></td><td class="amount">$49.00</td></tr>
+            <tr><td>INV-2016</td><td>12 Aug 2026</td><td><span class="status unpaid">Unpaid</span></td><td class="amount">$49.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Billing contact</h2>
+      <div class="card">
+        <div class="field">
+          <label for="email">Email for receipts</label>
+          <input id="email" name="email" type="email" placeholder="billing@northwind.test" />
+        </div>
+        <div class="field">
+          <label for="vat">VAT number</label>
+          <input id="vat" name="vat" placeholder="EU000000000" />
+        </div>
+        <button id="saveContact" type="button">Save contact</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Danger zone</h2>
+      <div class="card danger-zone">
+        <div class="row">
+          <p><strong>Cancel subscription</strong>The workspace drops to the free plan at the end of the period.</p>
+          <button id="cancelPlan" class="danger" type="button">Cancel subscription</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // A plausible, self-inflicted bug: the upgrade handler reads a field off a
+    // response the API never returns, so the click throws instead of navigating.
+    console.log('billing view mounted (workspace nw-4821)');
+
+    document.getElementById('upgrade').addEventListener('click', async () => {
+      const res = await fetch('/api/billing/subscription?token=abcdef1234567890');
+      const body = await res.json().catch(() => null);
+      try {
+        console.log('upgrade: current tier', body.subscription.tier);
+      } catch (err) {
+        console.error("TypeError: Cannot read properties of undefined (reading \'tier\')");
+        console.error('  at onUpgradeClick (billing.js:118:32)');
+      }
+    });
+
+    document.getElementById('seats').addEventListener('click', () => {
+      console.warn('seat picker is behind the seats-v2 flag; nothing rendered');
+    });
+
+    document.getElementById('saveContact').addEventListener('click', () => {
+      fetch('/api/billing/contact', { method: 'POST' }).catch(() => {});
+      fetch('/api/billing/sync').catch(() => {});
+    });
+  </script>
+</body>
+</html>
