@@ -1,6 +1,6 @@
 {
   "name": "bugpin",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Chrome MV3 extension: point at an element, say what's wrong, export the whole debugging session as one folder.",
@@ -11,6 +11,7 @@
     "test:browser:ui": "node test/browser-ui.mjs",
     "screenshots": "node tools/screenshots.mjs",
     "screenshots:store": "node tools/screenshots.mjs --store",
-    "package": "node tools/package.mjs"
+    "package": "node tools/package.mjs",
+    "promo": "node tools/promo.mjs"
   }
 }
