@@ -8,6 +8,7 @@
     "test": "node --test test/*.test.mjs",
     "test:browser": "node test/browser-loadtest.mjs",
     "icons": "node tools/make-icons.mjs",
-    "test:browser:ui": "node test/browser-ui.mjs"
+    "test:browser:ui": "node test/browser-ui.mjs",
+    "screenshots": "node tools/screenshots.mjs"
   }
 }
