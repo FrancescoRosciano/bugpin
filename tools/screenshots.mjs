@@ -1,13 +1,18 @@
 /**
- * Regenerates the README screenshots by driving the real extension.
+ * Regenerates the product screenshots by driving the real extension.
  *
- *   npm run screenshots
+ *   npm run screenshots            README gallery  -> docs/screenshots/
+ *   npm run screenshots:store      store listing   -> docs/store/
  *
  * Loads BugPin unpacked into a real Chromium (same harness the browser tests
  * use), serves a small demo app with a planted bug, records one full session
  * against it — activity, three annotations, export — and photographs each
- * surface along the way. Everything written to docs/screenshots/ is a capture
- * of the shipping UI, so a stale image means this script was not re-run.
+ * surface along the way. Everything written out is a capture of the shipping
+ * UI, so a stale image means this script was not re-run.
+ *
+ * The two profiles differ only in framing. The README wants retina images
+ * cropped to their content; the Chrome Web Store requires every screenshot to
+ * be exactly 1280x800 at 1x, and rejects anything else.
  *
  * Needs Playwright with the full `chromium` channel; point BUGPIN_PLAYWRIGHT at
  * one when this repo has none of its own.
@@ -22,10 +27,16 @@ import { renderMarkdown } from './md-preview.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
-const OUT = join(ROOT, 'docs', 'screenshots');
 const DEMO = readFileSync(join(HERE, 'demo', 'index.html'), 'utf8');
 
-const VIEWPORT = { width: 1180, height: 940 };
+const STORE = process.argv.includes('--store');
+const OUT = join(ROOT, 'docs', STORE ? 'store' : 'screenshots');
+
+/** Chrome Web Store screenshots must be exactly 1280x800 (or 640x400), at 1x. */
+const STORE_FRAME = { width: 1280, height: 800 };
+const README_FRAME = { width: 1180, height: 940 };
+const FRAME = STORE ? STORE_FRAME : README_FRAME;
+const SCALE = STORE ? 1 : 2;
 
 // The export path is legible in the popup screenshot, so the run happens under
 // a fixed, boring directory rather than a per-user mkdtemp hash.
@@ -34,34 +45,34 @@ const BASE_DIR = platform() === 'win32' ? join(tmpdir(), 'bugpin-demo') : '/tmp/
 /**
  * Playwright's `deviceScaleFactor` only changes what the renderer reports;
  * `chrome.tabs.captureVisibleTab` still hands back a 1x bitmap, which makes the
- * extension's DPR-aware element crop land outside the image. Forcing the scale
- * factor on the browser itself keeps capture and devicePixelRatio in agreement,
- * the way they are on a real retina display.
+ * extension's DPR-aware element crop land outside the image and come out one
+ * pixel wide. Forcing the scale factor on the browser itself keeps capture and
+ * devicePixelRatio in agreement, the way they are on a real display.
  */
-const RETINA = {
-  viewport: VIEWPORT,
-  deviceScaleFactor: 2,
+const LAUNCH = {
+  viewport: FRAME,
+  deviceScaleFactor: SCALE,
   args: [
     `--disable-extensions-except=${EXT_DIR}`,
     `--load-extension=${EXT_DIR}`,
     '--no-first-run',
-    '--force-device-scale-factor=2',
+    `--force-device-scale-factor=${SCALE}`,
   ],
 };
+
 const MIME = {
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
   '.html': 'text/html; charset=utf-8', '.md': 'text/plain; charset=utf-8',
 };
 
 /**
- * Serves the demo app, its two API endpoints (one empty 200 that triggers the
- * planted TypeError, one 500 that shows up as a network failure), and — once
- * an export exists — the report rendered as HTML with its shots alongside.
+ * Serves the demo app, its three API endpoints (an empty 200 that triggers the
+ * planted TypeError, a 500, and one request killed at the transport layer), and
+ * — once an export exists — the report rendered as HTML with its shots.
  */
 function startDemoServer(state) {
   const server = createServer((req, res) => {
-    const url = new URL(req.url, 'http://127.0.0.1');
-    const path = url.pathname;
+    const path = new URL(req.url, 'http://127.0.0.1').pathname;
 
     if (path === '/api/billing/subscription') {
       res.writeHead(200, { 'content-type': 'application/json' });
@@ -100,17 +111,23 @@ function startDemoServer(state) {
   });
 }
 
-const shot = async (page, name, options = {}) => {
-  await page.screenshot({ path: join(OUT, `${name}.png`), ...options });
-  console.log(`  wrote docs/screenshots/${name}.png`);
+const shot = async (page, name) => {
+  await page.screenshot({ path: join(OUT, `${name}.png`) });
+  console.log(`  wrote ${OUT.slice(ROOT.length + 1)}/${name}.png`);
 };
 
 /**
- * Trims the viewport to the document so no screenshot carries dead space.
- * `scrollHeight` is no use here — it never reports less than the viewport — so
- * the body's own box, margins included, is what gets measured.
+ * Trims the viewport to the document so no README screenshot carries dead
+ * space. `scrollHeight` is no use here — it never reports less than the
+ * viewport — so the body's own box, margins included, is what gets measured.
+ * Store screenshots keep their fixed frame instead.
  */
 async function fitToContent(page, width) {
+  if (STORE) {
+    await page.setViewportSize(STORE_FRAME);
+    await sleep(250);
+    return;
+  }
   const height = await page.evaluate(() => {
     const style = getComputedStyle(document.body);
     return document.body.getBoundingClientRect().height +
@@ -142,7 +159,7 @@ const state = { exportDir: null };
 const { server, origin } = await startDemoServer(state);
 const { context, page, worker, extensionId, downloads } = await launchWithExtension({
   baseDir: BASE_DIR,
-  contextOptions: RETINA,
+  contextOptions: LAUNCH,
 });
 
 if (!worker) {
@@ -155,20 +172,23 @@ const send = messenger(worker);
 
 // ---- record a session against the demo app -------------------------------
 
-await page.setViewportSize(VIEWPORT);
+await page.setViewportSize(FRAME);
 await page.goto(origin, { waitUntil: 'load' });
 await sleep(500);
 
 // The demo app is a full-height grid, so <main> always stretches to the
 // viewport and cannot report the real content height. The bottom of its last
 // child can. All three page shots then share one frame.
-const contentHeight = await page.evaluate(() => {
-  const main = document.querySelector('main');
-  const padding = parseFloat(getComputedStyle(main).paddingBottom);
-  return Math.ceil(main.lastElementChild.getBoundingClientRect().bottom + padding);
-});
-await page.setViewportSize({ width: VIEWPORT.width, height: contentHeight });
-await sleep(300);
+if (!STORE) {
+  const contentHeight = await page.evaluate(() => {
+    const main = document.querySelector('main');
+    const padding = parseFloat(getComputedStyle(main).paddingBottom);
+    return Math.ceil(main.lastElementChild.getBoundingClientRect().bottom + padding);
+  });
+  await page.setViewportSize({ width: FRAME.width, height: contentHeight });
+  await sleep(300);
+}
+
 await send({ type: 'bugpin:start' });
 await sleep(300);
 
@@ -177,7 +197,7 @@ await sleep(600);
 await page.click('#seats');            // console warning
 await page.fill('#email', 'billing@northwind.test');
 await page.fill('#vat', 'EU100200300');
-await page.click('#saveContact');      // 500 — a network failure in the report
+await page.click('#saveContact');      // a 500 and a killed connection
 await sleep(900);
 
 await send({ type: 'bugpin:toggle-annotate', on: true });
@@ -211,23 +231,31 @@ await sleep(800);
 await shot(page, '03-pins');
 
 // ---- the popup, mid-session and after export -----------------------------
+// A 320px popup cannot be framed at 1280x800 without padding it out with dead
+// space, so the store profile drives the export from the popup but photographs
+// only the surfaces that fill a frame.
 
 const popup = await context.newPage();
 await popup.setViewportSize({ width: 320, height: 400 });
 await popup.goto(`chrome-extension://${extensionId}/popup.html`, { waitUntil: 'load' });
 await sleep(1400);
-await fitToContent(popup, 320);
-await shot(popup, '04-popup');
+if (!STORE) {
+  await fitToContent(popup, 320);
+  await shot(popup, '04-popup');
+  await popup.setViewportSize({ width: 320, height: 400 });
+}
 
 await popup.click('#exportBtn');
 await sleep(5000);
-await fitToContent(popup, 320);
-await shot(popup, '05-popup-exported');
+if (!STORE) {
+  await fitToContent(popup, 320);
+  await shot(popup, '05-popup-exported');
+}
 
 // ---- options -------------------------------------------------------------
 
 const options = await context.newPage();
-await options.setViewportSize({ width: 700, height: 900 });
+await options.setViewportSize(STORE ? STORE_FRAME : { width: 700, height: 900 });
 await options.goto(`chrome-extension://${extensionId}/options.html`, { waitUntil: 'load' });
 await sleep(700);
 await fitToContent(options, 700);
@@ -251,7 +279,7 @@ if (dirs.length === 0) {
   state.exportDir = join(downloads, dirs[0]);
   console.log(`  export: ${dirs[0]}`);
   const report = await context.newPage();
-  await report.setViewportSize({ width: 900, height: 1040 });
+  await report.setViewportSize(STORE ? STORE_FRAME : { width: 900, height: 1040 });
   await report.goto(`${origin}/report`, { waitUntil: 'load' });
   await sleep(1200);
   await shot(report, '07-report');
@@ -259,4 +287,4 @@ if (dirs.length === 0) {
 
 await context.close();
 server.close();
-console.log(`\n${readdirSync(OUT).length} screenshots in docs/screenshots/`);
+console.log(`\n${readdirSync(OUT).length} screenshots in ${OUT.slice(ROOT.length + 1)}/`);

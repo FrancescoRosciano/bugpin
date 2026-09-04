@@ -132,9 +132,10 @@ skeleton for reproducing the bug.
 
 ## Privacy
 
-Everything stays on your machine. Capture, storage
-(`chrome.storage.local`), and export (your Downloads folder) are all
-local; BugPin makes no network calls of its own and uploads nothing.
+Full policy: [PRIVACY.md](PRIVACY.md). In short — everything stays on your
+machine. Capture, storage (`chrome.storage.local`), and export (your
+Downloads folder) are all local; BugPin makes no network calls of its own
+and uploads nothing.
 
 Redaction (`lib/redact.js`) is applied before anything is stored: password
 field values are never recorded, and strings shaped like API keys, bearer
@@ -151,6 +152,26 @@ formats can slip through, and the matching is deliberately conservative
 about long opaque strings so it doesn't shred hex ids, git SHAs or file
 paths in stack traces. Review an export folder yourself before sharing it,
 especially if you disable the redaction option.
+
+## Packaging for the Chrome Web Store
+
+`npm run package` writes `dist/bugpin-<version>.zip` from an explicit
+allowlist — the manifest, the extension's scripts and pages, `lib/` and the
+icons. It refuses to build if `manifest.json` and `package.json` disagree on
+the version, if a listed file is missing, or if the manifest references
+something the archive would not contain.
+
+Verify the artifact rather than the working tree before uploading it:
+
+```
+npm run package
+rm -rf /tmp/bugpin-pkg && unzip -q dist/bugpin-0.1.0.zip -d /tmp/bugpin-pkg
+BUGPIN_EXT_DIR=/tmp/bugpin-pkg npm run test:browser
+```
+
+Listing copy, permission justifications, store-sized screenshots and the
+submission checklist live in
+[docs/chrome-web-store.md](docs/chrome-web-store.md).
 
 ## Tests
 
@@ -190,4 +211,6 @@ The README screenshots are generated too. `npm run screenshots` loads BugPin
 into the same real Chromium the browser tests use, records one session against
 the demo app in `tools/demo/`, and photographs each surface as it goes, so a
 stale image means the script was not re-run rather than that the UI was
-described from memory. It needs the same Playwright the browser tests do.
+described from memory. `npm run screenshots:store` runs the same session at
+the 1280x800 the Chrome Web Store requires and writes to `docs/store/`. Both
+need the same Playwright the browser tests do.

@@ -9,6 +9,8 @@
     "test:browser": "node test/browser-loadtest.mjs",
     "icons": "node tools/make-icons.mjs",
     "test:browser:ui": "node test/browser-ui.mjs",
-    "screenshots": "node tools/screenshots.mjs"
+    "screenshots": "node tools/screenshots.mjs",
+    "screenshots:store": "node tools/screenshots.mjs --store",
+    "package": "node tools/package.mjs"
   }
 }

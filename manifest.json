@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "BugPin — annotate & export debugging sessions",
+  "name": "BugPin \u2014 annotate & export debugging sessions",
   "version": "0.1.0",
   "description": "Point at an element, say what's wrong, then export console, network, E2E repro steps and screenshots as one folder.",
+  "minimum_chrome_version": "120",
   "permissions": [
     "storage",
     "unlimitedStorage",
@@ -13,7 +14,9 @@
     "webRequest",
     "webNavigation"
   ],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -37,34 +40,56 @@
   "options_page": "options.html",
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content-console-inject.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content-console-inject.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN",
       "all_frames": false
     },
     {
-      "matches": ["<all_urls>"],
-      "js": ["content-bridge.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content-bridge.js"
+      ],
       "run_at": "document_start",
       "all_frames": false
     },
     {
-      "matches": ["<all_urls>"],
-      "js": ["content-annotate.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content-annotate.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["lib/*.js"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "lib/messages.js",
+        "lib/redact.js",
+        "lib/selector.js",
+        "lib/anchor.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "commands": {
     "toggle-annotate": {
-      "suggested_key": { "default": "Ctrl+Shift+E", "mac": "Command+Shift+E" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
       "description": "Toggle BugPin annotate mode"
     }
   }
