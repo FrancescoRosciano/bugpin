@@ -13,7 +13,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const EXT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+// Defaults to this repository, so the suites test the working tree. Point
+// BUGPIN_EXT_DIR at an unpacked build to run the same checks against the
+// artifact that would actually be uploaded.
+export const EXT_DIR =
+  process.env.BUGPIN_EXT_DIR || join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
