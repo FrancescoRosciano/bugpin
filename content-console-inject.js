@@ -224,3 +224,11 @@
     }
   });
 })();
+
+// Chrome files a console message under the extension that owns the top stack
+// frame's script URL. Every page console.warn/error passes through the patched
+// methods above, so under a chrome-extension:// URL the page's own warnings and
+// errors land in chrome://extensions → Errors as BugPin's. This file already
+// swallows its own failures, and BugPin's other scripts keep their URLs, so
+// renaming it hides nothing of ours (test/browser-error-attribution.mjs).
+//# sourceURL=bugpin://content-console-inject.js

@@ -138,14 +138,35 @@ export function messenger(worker) {
   };
 }
 
-/** Drives the overlay: hover, click, type, save — the way a person would. */
-export async function annotate(page, selector, note) {
+/**
+ * Drives the overlay: hover, click, type, save — the way a person would.
+ *
+ * The overlay ignores clicks until the previous note's save has answered
+ * (content-annotate.js, `if (state.frozen) return`), and that save includes a
+ * screenshot whose duration depends on machine load. So instead of trusting a
+ * fixed pause, click until the note box takes focus — what a person does when a
+ * click does not take — and fail loudly if it never opens.
+ */
+export async function annotate(page, selector, note, { timeoutMs = 15000 } = {}) {
   await page.hover(selector);
   await sleep(250);
-  await page.click(selector);
-  await sleep(400);
+  const deadline = Date.now() + timeoutMs;
+  while (!(await clickOpensNoteBox(page, selector))) {
+    if (Date.now() > deadline) throw new Error(`BugPin note box never opened for ${selector}`);
+  }
   await page.keyboard.type(note);
   await sleep(150);
   await page.keyboard.press('Enter');
   await sleep(2200);
+}
+
+/** Focus inside the overlay's closed shadow root retargets to its marked host. */
+async function clickOpensNoteBox(page, selector) {
+  await page.click(selector);
+  return page
+    .waitForFunction(() => document.activeElement?.hasAttribute('data-bugpin-ui'), null, {
+      timeout: 1000,
+      polling: 50,
+    })
+    .then(() => true, () => false);
 }
