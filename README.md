@@ -199,8 +199,9 @@ full session (start → activity → annotate → save → export), asserting 21
 about the result:
 
 ```
-npm run test:browser      # 21 checks: load, capture, annotate, shots, export
-npm run test:browser:ui   # 32 checks: popup, options, re-export, tab close, pins
+npm run test:browser          # 21 checks: load, capture, annotate, shots, export
+npm run test:browser:ui       # 32 checks: popup, options, re-export, tab close, pins
+npm run test:browser:errors   # 5 checks: page errors not blamed on BugPin in chrome://extensions
 ```
 
 It needs Playwright with the full `chromium` channel; the default headless
