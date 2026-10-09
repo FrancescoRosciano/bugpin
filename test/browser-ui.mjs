@@ -75,6 +75,20 @@ await sleep(1200);
 
 await send({ type: 'bugpin:toggle-annotate', on: true });
 await sleep(500);
+// Hold the first screenshot for 3s, as a loaded machine does, so the second
+// click lands while the overlay is still saving the first note and ignoring
+// clicks. Without this the race only shows up under load, as a flaky count=1.
+await worker.evaluate(() => {
+  const capture = chrome.tabs.captureVisibleTab.bind(chrome.tabs);
+  let delayed = false;
+  chrome.tabs.captureVisibleTab = async (...args) => {
+    if (!delayed) {
+      delayed = true;
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+    return capture(...args);
+  };
+});
 await annotate(page, '#danger', 'delete this');
 await annotate(page, '#rename', 'rename is broken too');
 
